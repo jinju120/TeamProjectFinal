@@ -40,7 +40,6 @@ class Character
 	bool isMoving;
 	bool isJumping;
 	bool isLongJumping;
-	bool isClimbing;
 	bool isHoldingKey;
 	bool isUpBlocked;
 	bool isDownBlocked;
@@ -54,10 +53,6 @@ class Character
 	const std::string JUMP_RIGHT_PATH;
 	const std::string STOP_PATH;
 
-	static int holding_coin;
-	static int holding_green_gem;
-	static int holding_red_gem;
-
 	void climbUp();
 	void climbDown();
 	void climbStop();
@@ -68,7 +63,7 @@ class Character
 	void longJumpLeftUp();
 	void longJumpRightUp();
 	void jumpLeftDown();
-	void jumpRightDown();	
+	void jumpRightDown();
 	void longJumpLeftDown();
 	void longJumpRightDown();
 	void landLeft();
@@ -82,14 +77,11 @@ public:
 
 	void setIsUpBlocked(bool isUpBlocked);
 	void setIsDownBlocked(bool isDownBlocked);
+	void setCurrentFloor();
 
 	bool getIsMoving();
 	bool getIsJumping();
 	bool getIsHoldingKey();
-	bool getIsUpBlocked();
-	bool getIsDownBlocked();
-	
-	void setCurrentFloor();
 
 	void hide();
 	void move(int direction);

@@ -43,7 +43,7 @@ Thing::Thing(int type, int x, int floor)
 		path = "Images1/Object/key.png";
 		break;
 	case BOX:
-		width = 54;
+		width = 66;
 		path = "Images1/Object/box.png";
 		break;
 	}
@@ -219,3 +219,4 @@ void Box::Opened()
 		key->takenOut();
 	}
 }
+

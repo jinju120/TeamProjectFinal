@@ -1,11 +1,7 @@
 ﻿#include "character.h"
 #include "enemy.h"
 #include "thing.h"
-/*
-	TODO
-	보스전이 추가될 것입니다(공격 이미지가 필요합니다.).
-	점수 계산이 필요합니다.
-*/
+#include "number.h"
 
 ScenePtr none = Scene::create("GameStart", "Images1/none.png");
 ScenePtr scene = Scene::create("TeamProject", "Images1/background.png");
@@ -17,6 +13,7 @@ ObjectPtr start_button;
 ObjectPtr quit_button;
 ObjectPtr explanation;
 ObjectPtr stage;
+ObjectPtr rank_image;
 
 Character* main_char;
 Spider* spider[2];
@@ -33,15 +30,20 @@ Treasure* red_gem[2];
 Key* key;
 Box* box[3];
 
-int Character::holding_coin = 0;
-int Character::holding_green_gem = 0;
-int Character::holding_red_gem = 0;
+CoinNumber coin_num;
+GreenGemNumber green_gem_num;
+RedGemNumber red_gem_num;
 
 int ladder_num;
 int trap_num;
 int blink_counter = 0;
 int current_code;
 int current_stage = STAGE1;
+int total_life_num = 9;
+
+int CoinNumber::holding_coin = 0;
+int GreenGemNumber::holding_green_gem = 0;
+int RedGemNumber::holding_red_gem = 0;
 
 const int START_POINT = 40, END_POINT = 1040;
 const int FLOOR0 = 40, FLOOR1 = 190, FLOOR2 = 340, FLOOR3 = 490;
@@ -65,6 +67,8 @@ void bossStage();
 void deletePtr();
 void nextStage();
 void gameOver();
+//void gameClear();
+//std::string calcScore();
 
 int main()
 {
@@ -184,16 +188,43 @@ void initGame()
 		{
 			if (current_stage == STAGE1)
 			{
-				current_stage = STAGE2;
 				scene->enter();
+
+				current_stage = STAGE2;
 				stageTwo();
+
+				check_timer->set(CHECK_TIME);
+				check_timer->start();
+
+				damaged_check_timer->set(CHECK_TIME);
+				damaged_check_timer->start();
+
+				enemy_timer->set(ENEMY_TIME);
+				enemy_timer->start();
 			}
 			else if (current_stage == STAGE2)
 			{
-				current_stage = STAGE3;
 				scene->enter();
+
+				current_stage = STAGE3;
 				stageThree();
+
+				check_timer->set(CHECK_TIME);
+				check_timer->start();
+
+				damaged_check_timer->set(CHECK_TIME);
+				damaged_check_timer->start();
+
+				enemy_timer->set(ENEMY_TIME);
+				enemy_timer->start();
 			}
+			//else if (current_stage == STAGE3)
+			//{
+			//	scene->enter();
+
+			//	current_stage = STAGE1;
+			//	//gameClear();
+			//}
 		}
 
 		return true;
@@ -258,6 +289,11 @@ void initGame()
 		{
 			if (main_char->isContactThing(coin[i]))
 			{
+				if (coin[i]->getIsExist())
+				{
+					coin_num.holdingCoinIncrease();
+					coin_num.updateNumber();
+				}
 				main_char->getCoin(coin[i]);
 			}
 		}
@@ -266,6 +302,11 @@ void initGame()
 		{
 			if (main_char->isContactThing(green_gem[i]))
 			{
+				if (green_gem[i]->getIsExist())
+				{
+					green_gem_num.holdingGreenGemIncrease();
+					green_gem_num.updateNumber();
+				}
 				main_char->getGreenGem(green_gem[i]);
 			}
 		}
@@ -274,6 +315,11 @@ void initGame()
 		{
 			if (main_char->isContactThing(red_gem[i]))
 			{
+				if (red_gem[i]->getIsExist())
+				{
+					red_gem_num.holdingRedGemIncrease();
+					red_gem_num.updateNumber();
+				}
 				main_char->getGreenGem(red_gem[i]);
 			}
 		}
@@ -311,6 +357,7 @@ void initGame()
 				main_char->fall();
 
 				main_char->lifeDecrease();
+				//total_life_num--;
 
 				blink_timer->set(BLINK_TIME);
 				blink_timer->start();
@@ -323,6 +370,7 @@ void initGame()
 				main_char->fall();
 
 				main_char->lifeDecrease();
+				//total_life_num--;
 
 				blink_timer->set(BLINK_TIME);
 				blink_timer->start();
@@ -335,6 +383,7 @@ void initGame()
 				main_char->fall();
 
 				main_char->lifeDecrease();
+				//total_life_num--;
 
 				blink_timer->set(BLINK_TIME);
 				blink_timer->start();
@@ -348,7 +397,8 @@ void initGame()
 			if (main_char->isCollideEnemy(spider[i]))
 			{
 				main_char->lifeDecrease();
-				
+				//total_life_num--;
+
 				blink_timer->set(BLINK_TIME);
 				blink_timer->start();
 
@@ -361,6 +411,7 @@ void initGame()
 			if (main_char->isCollideEnemy(bee[i]))
 			{
 				main_char->lifeDecrease();
+				//total_life_num--;
 
 				blink_timer->set(BLINK_TIME);
 				blink_timer->start();
@@ -374,6 +425,7 @@ void initGame()
 			if (main_char->isEntrapped(trap[i]))
 			{
 				main_char->lifeDecrease();
+				//total_life_num--;
 
 				blink_timer->set(BLINK_TIME);
 				blink_timer->start();
@@ -516,28 +568,29 @@ void initGame()
 	current_stage = STAGE1;
 }
 
+
 void stageOne()
 {
 	bool isFloor1Exist[FLOORING_NUM] = {
-		1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-		1, 1, 1, 1, 1, 1, 1, 0, 0, 0,
-		0, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-		1, 1, 1, 0, 0, 0, 0, 1, 1, 1,
-		1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+	   1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+	   1, 1, 1, 1, 1, 0, 0, 0, 1, 1,
+	   1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+	   1, 1, 1, 0, 0, 0, 0, 1, 1, 1,
+	   1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
 	};
 	bool isFloor2Exist[FLOORING_NUM] = {
-		1, 1, 1, 1, 1, 1, 0, 0, 0, 1,
-		1, 1, 1, 1, 1, 0, 0, 0, 1, 1,
-		1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-		0, 0, 0, 1, 1, 1, 1, 1, 1, 1,
-		1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+	   1, 1, 1, 1, 1, 0, 0, 0, 1, 1,
+	   1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+	   1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+	   0, 0, 0, 1, 1, 1, 1, 1, 1, 1,
+	   1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
 	};
 	bool isFloor3Exist[FLOORING_NUM] = {
-		1, 1, 1, 1, 1, 1, 1, 1, 0, 0,
-		0, 1, 1, 1, 1, 1, 1, 0, 0, 0,
-		1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-		1, 1, 1, 1, 0, 0, 0, 1, 1, 1,
-		1, 0, 0, 1, 1, 1, 1, 1, 1, 1,
+	   1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+	   1, 1, 1, 1, 1, 1, 1, 0, 0, 0,
+	   1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+	   1, 1, 1, 1, 0, 0, 0, 1, 1, 1,
+	   1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
 	};
 
 	for (int i = 0; i < FLOORING_NUM; i++)
@@ -565,8 +618,8 @@ void stageOne()
 	trap_num = 5;
 	trap[0] = new Thing(TRAP, 450, FLOOR0);
 	trap[1] = new Thing(TRAP, 700, FLOOR0);
-	trap[2] = new Thing(TRAP, 540, FLOOR1);
-	trap[3] = new Thing(TRAP, 800, FLOOR2);
+	trap[2] = new Thing(TRAP, 940, FLOOR1);
+	trap[3] = new Thing(TRAP, 350, FLOOR2);
 	trap[4] = new Thing(TRAP, 60, FLOOR3);
 
 	coin[0] = new Treasure(COIN, 550, FLOOR0);
@@ -583,17 +636,28 @@ void stageOne()
 
 	key = new Key(KEY, 420, FLOOR2);
 
-	bee[0] = new Bee(160, FLOOR1);
-	bee[1] = new Bee(640, FLOOR3);
+	bee[0] = new Bee(980, FLOOR2);
+	bee[1] = new Bee(200, FLOOR3);
 
-	box[0] = new Box(BOX, 160, FLOOR1, bee[0]);
-	box[1] = new Box(BOX, 420, FLOOR2, key);
-	box[2] = new Box(BOX, 640, FLOOR3, bee[1]);
+	box[0] = new Box(BOX, 420, FLOOR2, key);
+	box[1] = new Box(BOX, 970, FLOOR2, bee[0]);
+	box[2] = new Box(BOX, 200, FLOOR3, bee[1]);
 
 	spider[0] = new Spider(START_POINT, FLOOR1, BLACK);
-	spider[1] = new Spider(1000, FLOOR2, BLACK);
+	spider[1] = new Spider(1000, FLOOR2, WHITE);
 
 	main_char = new Character();
+
+	coin_num.setHoldingCoinZero();
+	coin_num.updateNumber();
+
+	green_gem_num.setHoldingGreenGemZero();
+	green_gem_num.updateNumber();
+
+	red_gem_num.setHoldingRedGemZero();
+	red_gem_num.updateNumber();
+
+	//total_life_num = 9;
 }
 
 void stageTwo()
@@ -601,25 +665,25 @@ void stageTwo()
 	stage->setImage("Images2/Text/stage2.png");
 
 	bool isFloor1Exist[FLOORING_NUM] = {
-		1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-		1, 1, 1, 1, 1, 1, 1, 1, 0, 0,
-		0, 0, 0, 0, 0, 0, 0, 0, 1, 1,
-		1, 1, 1, 0, 0, 0, 1, 1, 1, 1,
-		1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+	   1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+	   1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+	   1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+	   1, 1, 0, 0, 0, 1, 1, 1, 1, 1,
+	   1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
 	};
 	bool isFloor2Exist[FLOORING_NUM] = {
-		1, 1, 1, 1, 1, 1, 1, 0, 0, 0,
-		1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-		1, 1, 1, 1, 0, 0, 0, 0, 0, 0,
-		0, 0, 0, 0, 0, 0, 1, 1, 1, 0,
-		0, 0, 0, 1, 1, 1, 1, 1, 1, 1,
+	   1, 1, 1, 1, 1, 1, 1, 0, 0, 0,
+	   1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+	   1, 1, 1, 1, 0, 0, 0, 0, 0, 0,
+	   1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+	   1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
 	};
 	bool isFloor3Exist[FLOORING_NUM] = {
-		1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-		0, 0, 0, 0, 1, 1, 1, 1, 0, 0,
-		0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
-		1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-		0, 0, 0, 1, 1, 1, 1, 1, 1, 1,
+	   1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+	   0, 0, 1, 1, 1, 1, 1, 1, 1, 0,
+	   0, 0, 0, 0, 1, 1, 1, 1, 1, 1,
+	   1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+	   1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
 	};
 
 	for (int i = 0; i < FLOORING_NUM; i++)
@@ -636,74 +700,75 @@ void stageTwo()
 		floor3[i]->setState();
 	}
 
-	door = new Thing(DOOR, 20, FLOOR3);
+	door = new Thing(DOOR, 40, FLOOR3);
 
 	ladder_num = 6;
-	ladder[0] = new Ladder(LADDER, 240, FLOOR0);
+	ladder[0] = new Ladder(LADDER, 220, FLOOR0);
 	ladder[1] = new Ladder(LADDER, 780, FLOOR0);
 	ladder[2] = new Ladder(LADDER, 100, FLOOR1);
-	ladder[3] = new Ladder(LADDER, 920, FLOOR1);
+	ladder[3] = new Ladder(LADDER, 910, FLOOR1);
 	ladder[4] = new Ladder(LADDER, 330, FLOOR2);
 	ladder[5] = new Ladder(LADDER, 980, FLOOR2);
 
 	trap_num = 5;
 	trap[0] = new Thing(TRAP, 400, FLOOR0);
-	trap[1] = new Thing(TRAP, 680, FLOOR0);
-	trap[2] = new Thing(TRAP, 160, FLOOR1);
-	trap[3] = new Thing(TRAP, 840, FLOOR1);
-	trap[4] = new Thing(TRAP, 700, FLOOR3);
+	trap[1] = new Thing(TRAP, 630, FLOOR0);
+	trap[2] = new Thing(TRAP, 460, FLOOR1);
+	trap[3] = new Thing(TRAP, 980, FLOOR1);
+	trap[4] = new Thing(TRAP, 840, FLOOR2);
 
-	coin[0] = new Treasure(COIN, 560, FLOOR0);
-	coin[1] = new Treasure(COIN, 300, FLOOR1);
+	coin[0] = new Treasure(COIN, 530, FLOOR0);
+	coin[1] = new Treasure(COIN, 180, FLOOR1);
 	coin[2] = new Treasure(COIN, 60, FLOOR2);
 	coin[3] = new Treasure(COIN, 440, FLOOR2);
 	coin[4] = new Treasure(COIN, 180, FLOOR3);
 
 	green_gem[0] = new Treasure(GREEN_GEM, 950, FLOOR0);
-	green_gem[1] = new Treasure(GREEN_GEM, 760, FLOOR2);
+	green_gem[1] = new Treasure(GREEN_GEM, 620, FLOOR3);
 
 	red_gem[0] = new Treasure(RED_GEM, 620, FLOOR1);
-	red_gem[1] = new Treasure(RED_GEM, 630, FLOOR3);
+	red_gem[1] = new Treasure(RED_GEM, 920, FLOOR3);
 
-	key = new Key(KEY, 280, FLOOR2);
+	key = new Key(KEY, 680, FLOOR2);
 
-	bee[0] = new Bee(980, FLOOR1);
+	bee[0] = new Bee(300, FLOOR1);
 	bee[1] = new Bee(780, FLOOR3);
 
-	box[0] = new Box(BOX, 980, FLOOR1, bee[0]);
-	box[1] = new Box(BOX, 280, FLOOR2, key);
-	box[2] = new Box(BOX, 780, FLOOR3, bee[1]);
+	box[0] = new Box(BOX, 300, FLOOR1, bee[0]);
+	box[1] = new Box(BOX, 680, FLOOR2, key);
+	box[2] = new Box(BOX, 760, FLOOR3, bee[1]);
 
 	spider[0] = new Spider(START_POINT, FLOOR1, BLACK);
-	spider[1] = new Spider(1000, FLOOR3, BLACK);
+	spider[1] = new Spider(1000, FLOOR3, RED);
 
 	main_char = new Character();
 }
+
 
 void stageThree()
 {
 	stage->setImage("Images2/Text/stage3.png");
 
 	bool isFloor1Exist[FLOORING_NUM] = {
-		1, 1, 1, 1, 1, 1, 1, 1, 1, 0,
-		0, 0, 1, 1, 1, 1, 1, 1, 0, 0,
-		0, 1, 1, 1, 0, 0, 0, 1, 1, 1,
-		1, 0, 0, 1, 1, 1, 1, 1, 1, 1,
-		0, 0, 1, 1, 1, 1, 1, 1, 1, 1,
+	   1, 1, 1, 1, 0, 0, 1, 1, 1, 1,
+	   1, 1, 1, 1, 1, 1, 1, 0, 0, 0,
+	   1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+	   1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+	   0, 0, 1, 1, 1, 1, 1, 1, 1, 1,
 	};
 	bool isFloor2Exist[FLOORING_NUM] = {
-		1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-		1, 1, 1, 1, 1, 1, 0, 0, 0, 1,
-		1, 1, 0, 0, 1, 1, 1, 1, 1, 0,
-		0, 0, 1, 1, 1, 1, 0, 0, 1, 1,
-		1, 1, 0, 0, 0, 1, 1, 1, 1, 1,
+	   1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+	   1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+	   1, 1, 1, 1, 1, 1, 1, 1, 0, 0,
+	   1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+	   1, 1, 0, 0, 0, 1, 1, 1, 1, 1,
 	};
 	bool isFloor3Exist[FLOORING_NUM] = {
-		1, 1, 1, 1, 1, 1, 1, 1, 0, 0,
-		0, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-		1, 1, 1, 1, 0, 0, 0, 0, 0, 0,
-		0, 0, 0, 0, 0, 0, 0, 1, 1, 1,
-		1, 1, 1, 1, 1, 0, 0, 1, 1, 1,
+	   1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+	   1, 1, 1, 1, 1, 0, 0, 0, 1, 1,
+	   1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+	   1, 1, 1, 0, 0, 0, 1, 1, 1, 1,
+	   1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
 	};
 
 	for (int i = 0; i < FLOORING_NUM; i++)
@@ -728,49 +793,45 @@ void stageThree()
 	ladder[2] = new Ladder(LADDER, 80, FLOOR2);
 	ladder[3] = new Ladder(LADDER, 830, FLOOR2);
 
-	trap_num = 8;
-	trap[0] = new Thing(TRAP, 160, FLOOR0);
-	trap[1] = new Thing(TRAP, 300, FLOOR0);
-	trap[2] = new Thing(TRAP, 440, FLOOR0);
-	trap[3] = new Thing(TRAP, 750, FLOOR1);
-	trap[4] = new Thing(TRAP, 930, FLOOR1);
-	trap[5] = new Thing(TRAP, 220, FLOOR2);
-	trap[6] = new Thing(TRAP, 320, FLOOR3);
-	trap[7] = new Thing(TRAP, 460, FLOOR3);
+	trap_num = 9;
 
-	coin[0] = new Treasure(COIN, 240, FLOOR0);
+	trap[0] = new Thing(TRAP, 300, FLOOR0);
+	trap[1] = new Thing(TRAP, 500, FLOOR0);
+	trap[2] = new Thing(TRAP, 700, FLOOR0);
+	trap[3] = new Thing(TRAP, 170, FLOOR1);
+	trap[4] = new Thing(TRAP, 800, FLOOR1);
+	trap[5] = new Thing(TRAP, 450, FLOOR2);
+	trap[6] = new Thing(TRAP, 180, FLOOR3);
+	trap[7] = new Thing(TRAP, 540, FLOOR3);
+	trap[8] = new Thing(TRAP, 900, FLOOR3);
+
+	coin[0] = new Treasure(COIN, 380, FLOOR0);
 	coin[1] = new Treasure(COIN, 800, FLOOR0);
 	coin[2] = new Treasure(COIN, 80, FLOOR1);
-	coin[3] = new Treasure(COIN, 480, FLOOR1);
-	coin[4] = new Treasure(COIN, 700, FLOOR2);
+	coin[3] = new Treasure(COIN, 520, FLOOR1);
+	coin[4] = new Treasure(COIN, 960, FLOOR2);
 
 	green_gem[0] = new Treasure(GREEN_GEM, 990, FLOOR1);
 	green_gem[1] = new Treasure(GREEN_GEM, 150, FLOOR2);
 
-	red_gem[0] = new Treasure(RED_GEM, 370, FLOOR0);
+	red_gem[0] = new Treasure(RED_GEM, 700, FLOOR2);
 	red_gem[1] = new Treasure(RED_GEM, 990, FLOOR3);
 
-	// 주석이 있는 것이 처음 기획했던 것이 맞습니다. 에러를 피하기 위해 중복된 코드가 존재합니다.
-	//key = new Key(KEY, 400, FLOOR3);
+	key = new Key(KEY, 460, FLOOR3);
 
-	//box[0] = new Box(BOX, 700, FLOOR0);
-	//box[1] = new Box(BOX, 560, FLOOR2);
-	//box[2] = new Box(BOX, 900, FLOOR3);
+	bee[0] = new Bee(700, FLOOR1);
+	bee[1] = new Bee(220, FLOOR2);
 
-	key = new Key(KEY, 280, FLOOR2);
+	box[0] = new Box(BOX, 700, FLOOR1, bee[0]);
+	box[1] = new Box(BOX, 220, FLOOR2, bee[1]);
+	box[2] = new Box(BOX, 450, FLOOR3, key);
 
-	bee[0] = new Bee(980, FLOOR1);
-	bee[1] = new Bee(780, FLOOR3);
-
-	box[0] = new Box(BOX, 980, FLOOR1, bee[0]);
-	box[1] = new Box(BOX, 280, FLOOR2, key);
-	box[2] = new Box(BOX, 780, FLOOR3, bee[1]);
-
-	spider[0] = new Spider(1000, FLOOR1, BLACK);
-	spider[1] = new Spider(START_POINT, FLOOR3, BLACK);
+	spider[0] = new Spider(1000, FLOOR1, WHITE);
+	spider[1] = new Spider(START_POINT, FLOOR3, RED);
 
 	main_char = new Character();
 }
+
 
 void bossStage()
 {
@@ -781,10 +842,6 @@ void deletePtr()
 {
 	for (int i = 0; i < FLOORING_NUM; i++)
 	{
-		floor1[i]->hide();
-		floor2[i]->hide();
-		floor3[i]->hide();
-
 		delete floor1[i];
 		delete floor2[i];
 		delete floor3[i];
@@ -848,6 +905,7 @@ void deletePtr()
 	delete main_char;
 }
 
+
 void nextStage()
 {
 	check_timer->stop();
@@ -869,6 +927,7 @@ void nextStage()
 	start_button->hide();
 	quit_button->hide();
 }
+
 
 void gameOver()
 {
@@ -893,3 +952,66 @@ void gameOver()
 	start_button->show();
 	quit_button->show();
 }
+//
+//void gameClear()
+//{
+//	std::string rank;
+//
+//	check_timer->stop();
+//	damaged_check_timer->stop();
+//	blink_timer->stop();
+//	climb_timer->stop();
+//	move_timer->stop();
+//	jump_down_timer->stop();
+//	land_timer->stop();
+//	stop_timer->stop();
+//	enemy_timer->stop();
+//
+//	deletePtr();
+//
+//	none->enter();
+//
+//	rank = calcScore();
+//	rank_image->create("Images2/Text/" + rank + ".png", none, 735, 325);
+//
+//	explanation->setImage("Images2/Text/game_clear.png");
+//	start_button->setImage("Images2/Text/restart.png");
+//
+//	explanation->show();
+//	start_button->show();
+//	quit_button->show();
+//}
+//
+//std::string calcScore()
+//{
+//	std::string rank;
+//	int score = coin_num.getHoldingCoin();
+//	score += green_gem_num.getHoldingGreenGem() * 2;
+//	score += red_gem_num.getHoldingRedGem() * 3;
+//	score += total_life_num;
+//
+//	if (score > 30)
+//	{
+//		rank = "S";
+//	}
+//	else if (score > 25)
+//	{
+//		rank = "A";
+//	}
+//	else if (score > 20)
+//	{
+//		rank = "B";
+//	}
+//	else if (score > 15)
+//	{
+//		rank = "C";
+//	}
+//	else
+//	{
+//		rank = "D";
+//	}
+//
+//	return rank;
+//}
+
+

@@ -295,3 +295,4 @@ void Boss::attacked()
 		enemy->hide();
 	}
 }
+

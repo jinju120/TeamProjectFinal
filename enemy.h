@@ -66,7 +66,7 @@ public:
 class Boss : public Enemy
 {
 	int life;
-	
+
 	int width[6];
 
 	bool isExist;
