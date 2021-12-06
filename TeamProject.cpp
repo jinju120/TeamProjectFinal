@@ -3,10 +3,6 @@
 #include "thing.h"
 #include "number.h"
 
-#include <iostream>
-
-using namespace std;
-
 ScenePtr none = Scene::create("GameStart", "Images1/none.png");
 ScenePtr scene = Scene::create("TeamProject", "Images1/background.png");
 SoundPtr background_music;
@@ -980,7 +976,6 @@ void gameOver()
 
 void gameClear()
 {
-	printf("%s\n", __FUNCTION__);
 	std::string rank;
 
 	check_timer->stop();
@@ -1013,7 +1008,6 @@ void gameClear()
 
 std::string calcScore()
 {
-	printf("%s\n", __FUNCTION__);
 	std::string rank;
 	int score = coin_num.getHoldingCoin();
 	score += green_gem_num.getHoldingGreenGem() * 2;
