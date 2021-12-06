@@ -21,8 +21,6 @@ void Number::setCurrentNumber(int current_number)
 void Number::changeImage()
 {
 	std::string current_path = path + std::to_string(current_number) + ".png";
-	printf("%s: ", __FUNCTION__);
-	std::cout << current_path << std::endl;
 
 	number_image->setImage(current_path);
 }

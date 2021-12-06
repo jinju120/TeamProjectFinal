@@ -3,6 +3,10 @@
 #include "thing.h"
 #include "number.h"
 
+#include <iostream>
+
+using namespace std;
+
 ScenePtr none = Scene::create("GameStart", "Images1/none.png");
 ScenePtr scene = Scene::create("TeamProject", "Images1/background.png");
 SoundPtr background_music;
@@ -13,7 +17,7 @@ ObjectPtr start_button;
 ObjectPtr quit_button;
 ObjectPtr explanation;
 ObjectPtr stage;
-ObjectPtr rank_image;
+ObjectPtr rank_image = Object::create("Images2/Text/s.png", none, 735, 325, false);
 
 Character* main_char;
 Spider* spider[2];
@@ -58,6 +62,7 @@ const float ENEMY_TIME = 0.1f;
 
 bool isPlaying;
 bool isKeyPressed;
+bool isGameOver;
 
 void initGame();
 void stageOne();
@@ -67,8 +72,8 @@ void bossStage();
 void deletePtr();
 void nextStage();
 void gameOver();
-//void gameClear();
-//std::string calcScore();
+void gameClear();
+std::string calcScore();
 
 int main()
 {
@@ -186,6 +191,11 @@ void initGame()
 	none->setOnKeyboardCallback([&](ScenePtr none, KeyCode code, bool pressed)->bool {
 		if (code == KeyCode::KEY_ENTER)
 		{
+			if (isGameOver)
+			{
+				return true;
+			}
+
 			if (current_stage == STAGE1)
 			{
 				scene->enter();
@@ -218,13 +228,12 @@ void initGame()
 				enemy_timer->set(ENEMY_TIME);
 				enemy_timer->start();
 			}
-			//else if (current_stage == STAGE3)
-			//{
-			//	scene->enter();
+			else if (current_stage == STAGE3)
+			{
+				scene->enter();
 
-			//	current_stage = STAGE1;
-			//	//gameClear();
-			//}
+				current_stage = STAGE1;
+			}
 		}
 
 		return true;
@@ -281,7 +290,14 @@ void initGame()
 		{
 			if (main_char->getIsHoldingKey())
 			{
-				nextStage();
+				if (current_stage == STAGE3)
+				{
+					gameClear();
+				}
+				else
+				{
+					nextStage();
+				}
 			}
 		}
 
@@ -357,7 +373,7 @@ void initGame()
 				main_char->fall();
 
 				main_char->lifeDecrease();
-				//total_life_num--;
+				total_life_num--;
 
 				blink_timer->set(BLINK_TIME);
 				blink_timer->start();
@@ -370,7 +386,7 @@ void initGame()
 				main_char->fall();
 
 				main_char->lifeDecrease();
-				//total_life_num--;
+				total_life_num--;
 
 				blink_timer->set(BLINK_TIME);
 				blink_timer->start();
@@ -383,7 +399,7 @@ void initGame()
 				main_char->fall();
 
 				main_char->lifeDecrease();
-				//total_life_num--;
+				total_life_num--;
 
 				blink_timer->set(BLINK_TIME);
 				blink_timer->start();
@@ -397,7 +413,7 @@ void initGame()
 			if (main_char->isCollideEnemy(spider[i]))
 			{
 				main_char->lifeDecrease();
-				//total_life_num--;
+				total_life_num--;
 
 				blink_timer->set(BLINK_TIME);
 				blink_timer->start();
@@ -411,7 +427,7 @@ void initGame()
 			if (main_char->isCollideEnemy(bee[i]))
 			{
 				main_char->lifeDecrease();
-				//total_life_num--;
+				total_life_num--;
 
 				blink_timer->set(BLINK_TIME);
 				blink_timer->start();
@@ -425,7 +441,7 @@ void initGame()
 			if (main_char->isEntrapped(trap[i]))
 			{
 				main_char->lifeDecrease();
-				//total_life_num--;
+				total_life_num--;
 
 				blink_timer->set(BLINK_TIME);
 				blink_timer->start();
@@ -532,12 +548,31 @@ void initGame()
 		return true;
 		});
 
+	stage = Object::create("Images2/Text/stage1.png", scene, 10, 690);
 	explanation = Object::create("Images2/Text/explanation.png", none);
 
 	start_button = Object::create("Images2/Text/start.png", none, 450, 150);
 
 	start_button->setOnMouseCallback([&](auto, auto, auto, auto)->bool {
 		isPlaying = true;
+		isGameOver = false;
+
+		coin_num.setHoldingCoinZero();
+		coin_num.updateNumber();
+
+		green_gem_num.setHoldingGreenGemZero();
+		green_gem_num.updateNumber();
+
+		red_gem_num.setHoldingRedGemZero();
+		red_gem_num.updateNumber();
+
+		total_life_num = 9;
+
+		rank_image->hide();
+
+		current_stage = STAGE1;
+
+		
 
 		scene->enter();
 
@@ -552,6 +587,8 @@ void initGame()
 		enemy_timer->set(ENEMY_TIME);
 		enemy_timer->start();
 
+		stage->setImage("Images2/Text/stage1.png");
+
 		return true;
 		});
 
@@ -562,11 +599,8 @@ void initGame()
 
 		return true;
 		});
-
-	stage = Object::create("Images2/Text/stage1.png", scene, 10, 690);
-
-	current_stage = STAGE1;
 }
+
 
 
 void stageOne()
@@ -647,17 +681,6 @@ void stageOne()
 	spider[1] = new Spider(1000, FLOOR2, WHITE);
 
 	main_char = new Character();
-
-	coin_num.setHoldingCoinZero();
-	coin_num.updateNumber();
-
-	green_gem_num.setHoldingGreenGemZero();
-	green_gem_num.updateNumber();
-
-	red_gem_num.setHoldingRedGemZero();
-	red_gem_num.updateNumber();
-
-	//total_life_num = 9;
 }
 
 void stageTwo()
@@ -832,7 +855,6 @@ void stageThree()
 	main_char = new Character();
 }
 
-
 void bossStage()
 {
 
@@ -842,8 +864,13 @@ void deletePtr()
 {
 	for (int i = 0; i < FLOORING_NUM; i++)
 	{
+		floor1[i]->hide();
 		delete floor1[i];
+
+		floor2[i]->hide();
 		delete floor2[i];
+
+		floor3[i]->hide();
 		delete floor3[i];
 	}
 
@@ -905,7 +932,6 @@ void deletePtr()
 	delete main_char;
 }
 
-
 void nextStage()
 {
 	check_timer->stop();
@@ -927,7 +953,6 @@ void nextStage()
 	start_button->hide();
 	quit_button->hide();
 }
-
 
 void gameOver()
 {
@@ -952,66 +977,70 @@ void gameOver()
 	start_button->show();
 	quit_button->show();
 }
-//
-//void gameClear()
-//{
-//	std::string rank;
-//
-//	check_timer->stop();
-//	damaged_check_timer->stop();
-//	blink_timer->stop();
-//	climb_timer->stop();
-//	move_timer->stop();
-//	jump_down_timer->stop();
-//	land_timer->stop();
-//	stop_timer->stop();
-//	enemy_timer->stop();
-//
-//	deletePtr();
-//
-//	none->enter();
-//
-//	rank = calcScore();
-//	rank_image->create("Images2/Text/" + rank + ".png", none, 735, 325);
-//
-//	explanation->setImage("Images2/Text/game_clear.png");
-//	start_button->setImage("Images2/Text/restart.png");
-//
-//	explanation->show();
-//	start_button->show();
-//	quit_button->show();
-//}
-//
-//std::string calcScore()
-//{
-//	std::string rank;
-//	int score = coin_num.getHoldingCoin();
-//	score += green_gem_num.getHoldingGreenGem() * 2;
-//	score += red_gem_num.getHoldingRedGem() * 3;
-//	score += total_life_num;
-//
-//	if (score > 30)
-//	{
-//		rank = "S";
-//	}
-//	else if (score > 25)
-//	{
-//		rank = "A";
-//	}
-//	else if (score > 20)
-//	{
-//		rank = "B";
-//	}
-//	else if (score > 15)
-//	{
-//		rank = "C";
-//	}
-//	else
-//	{
-//		rank = "D";
-//	}
-//
-//	return rank;
-//}
 
+void gameClear()
+{
+	printf("%s\n", __FUNCTION__);
+	std::string rank;
+
+	check_timer->stop();
+	damaged_check_timer->stop();
+	blink_timer->stop();
+	climb_timer->stop();
+	move_timer->stop();
+	jump_down_timer->stop();
+	land_timer->stop();
+	stop_timer->stop();
+	enemy_timer->stop();
+
+	deletePtr();
+
+	none->enter();
+
+	rank = calcScore();
+	rank_image->setImage("Images2/Text/" + rank + ".png");
+
+	explanation->setImage("Images2/Text/game_clear.png");
+	start_button->setImage("Images2/Text/restart.png");
+
+	explanation->show();
+	start_button->show();
+	quit_button->show();
+	rank_image->show();
+}
+
+
+
+std::string calcScore()
+{
+	printf("%s\n", __FUNCTION__);
+	std::string rank;
+	int score = coin_num.getHoldingCoin();
+	score += green_gem_num.getHoldingGreenGem() * 2;
+	score += red_gem_num.getHoldingRedGem() * 3;
+	score += total_life_num;
+	
+	if (score > 30)
+	{
+		rank = "s";
+	}
+	else if (score > 25)
+	{
+		rank = "a";
+	}
+	else if (score > 20)
+	{
+		rank = "b";
+	}
+	else if (score > 15)
+	{
+		rank = "c";
+	}
+	else
+	{
+		rank = "d";
+	}
+
+	return rank;
+}
 
