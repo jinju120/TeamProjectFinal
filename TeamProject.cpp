@@ -13,7 +13,7 @@ ObjectPtr start_button;
 ObjectPtr quit_button;
 ObjectPtr explanation;
 ObjectPtr stage;
-ObjectPtr rank_image = Object::create("Images2/Text/s.png", none, 735, 325, false);
+ObjectPtr rank_image;
 
 Character* main_char;
 Spider* spider[2];
@@ -79,10 +79,13 @@ int main()
 
 	initGame();
 	startGame(none);
+
 }
 
 void initGame()
 {
+	
+
 	background_music = Sound::create("Sounds/background-music.mp3");
 	background_music->play();
 
@@ -547,6 +550,8 @@ void initGame()
 	stage = Object::create("Images2/Text/stage1.png", scene, 10, 690);
 	explanation = Object::create("Images2/Text/explanation.png", none);
 
+	rank_image = Object::create("Images2/Text/s.png", none, 735, 325, false);
+
 	start_button = Object::create("Images2/Text/start.png", none, 450, 150);
 
 	start_button->setOnMouseCallback([&](auto, auto, auto, auto)->bool {
@@ -568,7 +573,7 @@ void initGame()
 
 		current_stage = STAGE1;
 
-		
+
 
 		scene->enter();
 
@@ -1013,7 +1018,7 @@ std::string calcScore()
 	score += green_gem_num.getHoldingGreenGem() * 2;
 	score += red_gem_num.getHoldingRedGem() * 3;
 	score += total_life_num;
-	
+
 	if (score > 30)
 	{
 		rank = "s";
