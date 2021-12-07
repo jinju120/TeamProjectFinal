@@ -152,7 +152,7 @@ Spider::Spider(int x, int floor, int type)
 	}
 
 	current_width = 39;
-	current_height = 24;
+	current_height = 21;
 
 	enemy = Object::create(current_path, scene, x, y);
 }
@@ -295,4 +295,3 @@ void Boss::attacked()
 		enemy->hide();
 	}
 }
-
